@@ -1,0 +1,17 @@
+app ansible_ssh_host=52.53.227.181
+database ansible_ssh_host=18.144.33.168
+celery ansible_ssh_host=18.144.15.47
+
+[app-servers]
+app
+
+[database-servers]
+database
+
+[celery-servers]
+celery
+
+[production:children]
+app-servers
+database-servers
+celery-servers
