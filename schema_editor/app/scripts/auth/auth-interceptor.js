@@ -1,6 +1,6 @@
 (function() {
     'use strict';
-
+    window.alert("test-change")
     /**
      * @ngInject
      */
