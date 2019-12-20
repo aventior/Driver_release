@@ -1,6 +1,6 @@
 (function () {
     'use strict';
-    window.alert("test-change");
+    window.alert('Test')
     /* ngInject */
     function AuditDownloadModalController($modalInstance, $scope, $translate, WebConfig, AuditLogs,
                                           FileSaver, Blob) {
