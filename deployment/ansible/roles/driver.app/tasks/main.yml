@@ -12,12 +12,38 @@
         group={{ driver_user }}
         mode=0775
         state=directory
+# changed aws ECR
+- name: Install Pip
+  apt: pkg=python-pip state=present
+
+- name: Install pexpect
+  command: pip install pexpect
+  when: aws_access_key_id is defined
+
+- name: Install awscli
+  command: pip install awscli
+  when: aws_access_key_id is defined
+
+- name: Create aws credentials
+  expect:
+    command: aws configure
+    responses:
+      (?i)aws\saccess: "{{aws_access_key_id}}"
+      (?i)aws\ssecret: "{{aws_secret_access_key}}"
+      (?i)region\sname: "us-west-1"
+      (?i)output\sformat: "text"
+  when: aws_access_key_id is defined
+
+- name: Authenticate to ECR
+  shell: $(aws ecr get-login --region us-west-1 --no-include-email)
+  when: aws_access_key_id is defined
+#changed ECR 
 
 - name: Build application Docker image
   command: >
     docker build
       -f {{ root_app_dir }}/Dockerfile.base
-      -t {{ docker_repository }}driver-app
+      -t {{ docker_repository }}driver-app:{{ docker_image_tag }}
       {{ root_app_dir }}
   when: developing
 
@@ -25,12 +51,12 @@
   command: >
     docker build
       -f {{ root_app_dir }}/Dockerfile.development
-      -t {{ docker_repository }}driver-app
+      -t {{ docker_repository }}driver-app:{{ docker_image_tag }}
       {{ root_app_dir }}
   when: developing
 
 - name: Pull application Docker image
-  command: /usr/bin/docker pull {{ docker_repository }}driver-app
+  command: /usr/bin/docker pull {{ docker_repository }}driver-app:{{ docker_image_tag }}
   when: staging or production
 
 - name: Configure DRIVER application service definition
