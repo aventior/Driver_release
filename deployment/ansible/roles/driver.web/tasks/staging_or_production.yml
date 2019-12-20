@@ -1,6 +1,34 @@
 ---
+# changed aws ECR
+- name: Install Pip
+  apt: pkg=python-pip state=present
+
+- name: Install pexpect
+  command: pip install pexpect
+  when: aws_access_key_id is defined
+
+- name: Install awscli
+  command: pip install awscli
+  when: aws_access_key_id is defined
+
+- name: Create aws credentials
+  expect:
+    command: aws configure
+    responses:
+      (?i)aws\saccess: "{{aws_access_key_id}}"
+      (?i)aws\ssecret: "{{aws_secret_access_key}}"
+      (?i)region\sname: "us-west-1"
+      (?i)output\sformat: "text"
+  when: aws_access_key_id is defined
+  
+# changed aws ECR
+
+- name: Authenticate to ECR
+  shell: $(aws ecr get-login --region us-west-1 --no-include-email)
+  when: aws_access_key_id is defined
+
 - name: Pull editor Docker image
-  command: /usr/bin/docker pull {{ docker_repository }}driver-editor
+  command: /usr/bin/docker pull {{ docker_repository }}driver-editor:latest
 
 - name: Build production editor app
   command: >
@@ -10,7 +38,7 @@
       --volume {{ editor_scripts_dir }}/config.js:{{ editor_scripts_dir }}/config.js
       --volume {{ editor_build_dir }}:{{ editor_build_dir }}
       --log-driver syslog
-      {{ docker_repository }}driver-editor
+      {{ docker_repository }}driver-editor:latest
       build
 
 - name: Create editor data container
@@ -18,10 +46,10 @@
     /usr/bin/docker create
       --volume {{ editor_dir }}
       --name driver-editor
-    {{ docker_repository }}driver-editor
+    {{ docker_repository }}driver-editor:latest
 
 - name: Pull web Docker image
-  command: /usr/bin/docker pull {{ docker_repository }}driver-web
+  command: /usr/bin/docker pull {{ docker_repository }}driver-web:latest
 
 - name: Build production web app
   command: >
@@ -34,7 +62,7 @@
       --volume {{ web_dir }}/app/index.html:{{ web_dir }}/app/index.html
       --volume {{ web_build_dir }}:{{ web_build_dir }}
       --log-driver syslog
-      {{ docker_repository }}driver-web
+      {{ docker_repository }}driver-web:latest
       build
 
 - name: Remove editor data container
